@@ -1,0 +1,18 @@
+{
+  "confessions": [
+    {
+      "id": "760df0ea-a778-4464-9744-8ec299feb2d4",
+      "text": "hey",
+      "category": "advice",
+      "createdAt": 1783636229084,
+      "likes": 1,
+      "comments": [
+        {
+          "id": "e4031650-d5af-405c-9e24-a7e75b7a7562",
+          "text": "hi",
+          "createdAt": 1783636251923
+        }
+      ]
+    }
+  ]
+}

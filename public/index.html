@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Wall — say it anonymously</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<header class="board-header">
+  <div class="wrap">
+    <h1 class="pinned-title">The Wall</h1>
+    <p class="subtitle">Say what you can't say anywhere else. No names. No login.</p>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="composer" aria-label="Post a confession">
+    <div class="note note-compose">
+      <span class="pin" aria-hidden="true"></span>
+      <textarea
+        id="confession-input"
+        placeholder="What's on your mind..."
+        maxlength="500"
+        aria-label="Your confession"
+      ></textarea>
+      <div class="composer-row">
+        <select id="category-select" aria-label="Category">
+          <option value="random">🎲 Random</option>
+          <option value="funny">😂 Funny</option>
+          <option value="serious">💭 Serious</option>
+          <option value="advice">🆘 Need advice</option>
+          <option value="rant">🔥 Rant</option>
+        </select>
+        <span class="char-count" id="char-count">500 left</span>
+        <button id="post-btn">Pin it</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="feed-controls">
+    <button class="sort-btn active" data-sort="new">Newest</button>
+    <button class="sort-btn" data-sort="top">Most liked</button>
+  </div>
+
+  <p class="error-msg" id="error-msg" hidden></p>
+
+  <section class="board" id="board" aria-live="polite">
+    <p class="empty-state" id="empty-state" hidden>The wall is empty. Be the first to pin something.</p>
+  </section>
+</main>
+
+<footer class="board-footer">
+  <div class="wrap">
+    <p>Posts are fully anonymous — no accounts, no tracking of who wrote what. Be kind. Don't post anything that could identify or harm someone else.</p>
+  </div>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>

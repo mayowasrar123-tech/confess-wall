@@ -1,0 +1,318 @@
+:root {
+  --cork: #4A3728;
+  --cork-dark: #362819;
+  --cork-fiber: #55402e;
+  --paper: #F5EFE3;
+  --paper-shadow: #E8DCC8;
+  --pin-red: #C1443D;
+  --ink: #2B2118;
+  --muted: #8A7B68;
+  --muted-light: #C9BBA5;
+  --like: #5B8770;
+
+  --font-hand: "Caveat", cursive;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
+
+* { box-sizing: border-box; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+  font-family: var(--font-body);
+  color: var(--ink);
+  background-color: var(--cork);
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(0,0,0,0.12) 0, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(0,0,0,0.12) 0, transparent 40%),
+    repeating-linear-gradient(0deg, var(--cork-fiber) 0px, var(--cork) 2px, var(--cork) 3px);
+}
+
+.wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.board-header {
+  padding: 48px 20px 24px;
+  text-align: center;
+}
+.pinned-title {
+  font-family: var(--font-hand);
+  font-weight: 700;
+  font-size: clamp(3rem, 8vw, 4.5rem);
+  color: var(--paper);
+  margin: 0;
+  transform: rotate(-2deg);
+  text-shadow: 2px 2px 0 rgba(0,0,0,0.25);
+}
+.subtitle {
+  color: var(--muted-light);
+  font-size: 0.95rem;
+  margin: 8px 0 0;
+}
+
+/* ---- Note card base (the signature element) ---- */
+.note {
+  background: var(--paper);
+  background-image: linear-gradient(180deg, transparent 0%, transparent 96%, rgba(0,0,0,0.03) 100%);
+  border-radius: 3px;
+  box-shadow:
+    0 6px 14px rgba(0,0,0,0.35),
+    0 2px 4px rgba(0,0,0,0.2);
+  padding: 20px 18px 16px;
+  position: relative;
+  color: var(--ink);
+}
+.pin {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #e8837c, var(--pin-red) 60%, #8a2e28 100%);
+  box-shadow: 0 3px 4px rgba(0,0,0,0.4);
+  z-index: 2;
+}
+
+/* ---- Composer ---- */
+.composer {
+  padding: 28px 0 12px;
+}
+.note-compose {
+  transform: rotate(-0.6deg);
+  max-width: 560px;
+  margin: 0 auto;
+}
+#confession-input {
+  width: 100%;
+  min-height: 90px;
+  border: none;
+  background: transparent;
+  font-family: var(--font-body);
+  font-size: 1.02rem;
+  color: var(--ink);
+  resize: vertical;
+  outline: none;
+  line-height: 1.5;
+}
+#confession-input::placeholder { color: var(--muted); }
+
+.composer-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+#category-select {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--paper-shadow);
+  background: #fff;
+  color: var(--ink);
+}
+.char-count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-left: auto;
+}
+#post-btn {
+  background: var(--pin-red);
+  color: #fff;
+  border: none;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 10px 18px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: filter 0.15s ease, transform 0.1s ease;
+}
+#post-btn:hover { filter: brightness(1.08); }
+#post-btn:active { transform: scale(0.97); }
+#post-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+#post-btn:focus-visible, #category-select:focus-visible, .sort-btn:focus-visible {
+  outline: 2px solid var(--paper);
+  outline-offset: 2px;
+}
+
+/* ---- Feed controls ---- */
+.feed-controls {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin: 8px 0 24px;
+}
+.sort-btn {
+  background: transparent;
+  border: 1px solid var(--muted-light);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.sort-btn.active {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--paper);
+}
+
+.error-msg {
+  text-align: center;
+  color: #ffd7d3;
+  background: rgba(193,68,61,0.35);
+  border: 1px solid var(--pin-red);
+  padding: 10px 14px;
+  border-radius: 8px;
+  max-width: 500px;
+  margin: 0 auto 16px;
+  font-size: 0.85rem;
+}
+
+/* ---- Board / feed ---- */
+.board {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 28px 22px;
+  padding-bottom: 60px;
+  align-items: start;
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: var(--muted-light);
+  font-style: italic;
+  padding: 40px 0;
+}
+
+.confession-card {
+  animation: pinDrop 0.35s ease forwards;
+}
+@keyframes pinDrop {
+  from { opacity: 0; transform: translateY(-10px) rotate(0deg); }
+  to { opacity: 1; transform: translateY(0) rotate(var(--rot, 0deg)); }
+}
+.confession-card .note {
+  transform: rotate(var(--rot, 0deg));
+}
+.confession-card .note:hover {
+  transform: rotate(0deg) scale(1.02);
+  transition: transform 0.15s ease;
+}
+
+.card-category {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 1.1rem;
+}
+.card-text {
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 6px 0 14px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.card-actions {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.like-btn, .comment-toggle {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 2px;
+}
+.like-btn:hover, .comment-toggle:hover { color: var(--ink); }
+.like-btn.liked { color: var(--like); font-weight: 600; }
+.like-btn:focus-visible, .comment-toggle:focus-visible {
+  outline: 2px solid var(--pin-red);
+  outline-offset: 2px;
+}
+
+.comments-section {
+  margin-top: 12px;
+  border-top: 1px dashed var(--paper-shadow);
+  padding-top: 10px;
+}
+.comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 8px;
+  max-height: 160px;
+  overflow-y: auto;
+}
+.comment-item {
+  font-size: 0.85rem;
+  background: var(--paper-shadow);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.comment-form {
+  display: flex;
+  gap: 6px;
+}
+.comment-form input {
+  flex: 1;
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--paper-shadow);
+}
+.comment-form button {
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.board-footer {
+  padding: 20px 0 50px;
+}
+.board-footer p {
+  color: var(--muted-light);
+  font-size: 0.78rem;
+  text-align: center;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+@media (max-width: 480px) {
+  .board { grid-template-columns: 1fr; }
+  .confession-card .note { transform: none !important; }
+}
