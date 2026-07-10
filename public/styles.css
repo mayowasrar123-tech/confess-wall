@@ -221,6 +221,16 @@ html, body {
   right: 10px;
   font-size: 1.1rem;
 }
+.trending-badge {
+  display: inline-block;
+  background: var(--pin-red);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 20px;
+  margin-bottom: 6px;
+}
 .card-text {
   font-size: 1rem;
   line-height: 1.5;

@@ -15,6 +15,13 @@ const CATEGORY_EMOJI = {
   random: "🎲",
 };
 
+// Apply campus personalization from config.js
+if (typeof WALL_CONFIG !== "undefined") {
+  document.getElementById("board-title").textContent = WALL_CONFIG.name;
+  document.getElementById("board-subtitle").textContent = WALL_CONFIG.subtitle;
+  document.title = `${WALL_CONFIG.name} — say it anonymously`;
+}
+
 const LIKED_KEY = "confess-wall-liked";
 let currentSort = "new";
 let confessions = [];
@@ -94,6 +101,7 @@ function render() {
     card.style.setProperty("--rot", rotationForId(c.id));
 
     const isLiked = liked.has(c.id);
+    const isTrending = c.likes >= 5;
     const commentsHtml = c.comments
       .map(
         (cm) =>
@@ -105,6 +113,7 @@ function render() {
       <div class="note">
         <span class="pin" aria-hidden="true"></span>
         <span class="card-category" title="${c.category}">${CATEGORY_EMOJI[c.category] || "🎲"}</span>
+        ${isTrending ? '<span class="trending-badge">🔥 trending</span>' : ""}
         <p class="card-text">${escapeHtml(c.text)}</p>
         <div class="card-meta">
           <span>${timeAgo(c.createdAt)}</span>

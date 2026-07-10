@@ -45,6 +45,40 @@ Same process as SiteCheck:
 3. Start command: `node server.js`
 4. No build command needed (or `npm install`, which will just no-op)
 
+## Moderation: the admin panel
+
+Visit `/admin.html` (e.g. `http://localhost:3000/admin.html`, or your live
+URL + `/admin.html`) to see every confession and comment with delete
+buttons. It's protected by a password.
+
+**Set your own password before sharing this with anyone:**
+- Locally: run with `ADMIN_KEY=yourpassword node server.js`
+- On Railway: go to your service → **Variables** → add `ADMIN_KEY` with
+  whatever password you want → redeploy
+
+If you don't set it, it defaults to `changeme` — **don't leave it that
+way** once you share the link, since the admin page URL is technically
+guessable by anyone with the domain.
+
+This isn't bank-grade security (it's a single shared password, not
+individual accounts), but it's enough to let you quietly remove
+anything mean-spirited, identifying, or harmful without needing to
+touch the server files directly.
+
+## Personalizing it for your campus
+
+Edit `public/config.js` — that's the only file you need to touch:
+
+```js
+const WALL_CONFIG = {
+  name: "LAUTECH Wall",
+  subtitle: "Say what you can't say anywhere else. No names. No login.",
+};
+```
+
+Change `name` and `subtitle` to whatever fits your school/group, then
+redeploy (push to GitHub, Railway picks it up automatically).
+
 ## Moderation note
 
 There's no content filtering beyond length limits and basic character
@@ -55,5 +89,5 @@ trusted group), consider adding:
 - Manual review before posts go live (slower, but safer for anything
   public-facing)
 
-For a small friend-group/class rollout, none of this is strictly
-required — but worth knowing before opening it up more widely.
+For a small friend-group/class rollout, the admin panel above is
+probably enough — but worth knowing before opening it up more widely.

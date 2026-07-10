@@ -7,6 +7,11 @@ const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, "public");
 const DATA_FILE = path.join(__dirname, "data.json");
 
+// Set this in Railway's Variables tab (Settings > Variables) to something only
+// you know. Without setting it, it defaults to "changeme" — change it before
+// sharing the admin link with anyone.
+const ADMIN_KEY = process.env.ADMIN_KEY || "changeme";
+
 const MAX_CONFESSION_LENGTH = 500;
 const MAX_COMMENT_LENGTH = 200;
 const POST_COOLDOWN_MS = 20 * 1000; // 1 post per 20s per IP
@@ -197,6 +202,55 @@ async function handleComment(req, res, id) {
   jsonResponse(res, 201, { comment });
 }
 
+function checkAdminAuth(req) {
+  const key = req.headers["x-admin-key"];
+  return key && key === ADMIN_KEY;
+}
+
+async function handleDeleteConfession(req, res, id) {
+  if (!checkAdminAuth(req)) {
+    return jsonResponse(res, 401, { error: "Not authorized." });
+  }
+  const data = loadData();
+  const before = data.confessions.length;
+  data.confessions = data.confessions.filter((c) => c.id !== id);
+  if (data.confessions.length === before) {
+    return jsonResponse(res, 404, { error: "Confession not found." });
+  }
+  await saveData(data);
+  jsonResponse(res, 200, { deleted: true });
+}
+
+async function handleDeleteComment(req, res, confessionId, commentId) {
+  if (!checkAdminAuth(req)) {
+    return jsonResponse(res, 401, { error: "Not authorized." });
+  }
+  const data = loadData();
+  const confession = data.confessions.find((c) => c.id === confessionId);
+  if (!confession) return jsonResponse(res, 404, { error: "Confession not found." });
+
+  const before = confession.comments.length;
+  confession.comments = confession.comments.filter((cm) => cm.id !== commentId);
+  if (confession.comments.length === before) {
+    return jsonResponse(res, 404, { error: "Comment not found." });
+  }
+  await saveData(data);
+  jsonResponse(res, 200, { deleted: true });
+}
+
+async function handleAdminLogin(req, res) {
+  let body;
+  try {
+    body = await readBody(req);
+  } catch {
+    return jsonResponse(res, 400, { error: "Invalid request." });
+  }
+  if (body.key === ADMIN_KEY) {
+    return jsonResponse(res, 200, { ok: true });
+  }
+  jsonResponse(res, 401, { error: "Wrong key." });
+}
+
 // ---- Static file serving ----
 const MIME = {
   ".html": "text/html",
@@ -239,6 +293,21 @@ const server = http.createServer(async (req, res) => {
   const commentMatch = url.match(/^\/api\/confessions\/([a-f0-9-]+)\/comments$/);
   if (req.method === "POST" && commentMatch) {
     return handleComment(req, res, commentMatch[1]);
+  }
+  if (req.method === "DELETE" && likeMatch === null) {
+    const deleteConfessionMatch = url.match(/^\/api\/confessions\/([a-f0-9-]+)$/);
+    if (deleteConfessionMatch) {
+      return handleDeleteConfession(req, res, deleteConfessionMatch[1]);
+    }
+    const deleteCommentMatch = url.match(
+      /^\/api\/confessions\/([a-f0-9-]+)\/comments\/([a-f0-9-]+)$/
+    );
+    if (deleteCommentMatch) {
+      return handleDeleteComment(req, res, deleteCommentMatch[1], deleteCommentMatch[2]);
+    }
+  }
+  if (req.method === "POST" && url === "/api/admin/login") {
+    return handleAdminLogin(req, res);
   }
 
   serveStatic(req, res);
