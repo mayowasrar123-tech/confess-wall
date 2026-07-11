@@ -25,26 +25,17 @@ Visit `http://localhost:3000`.
 
 ## ⚠️ Important: storage caveat before deploying
 
-This uses a JSON file as a simple database. On its own, that file lives
-next to your code — which means **every time you redeploy (push new
-code), the file gets wiped and confessions disappear.**
+This uses a JSON file as a simple database. That's fine for a small
+project like this, but:
 
-**Fix: attach a Railway Volume so data survives redeploys.**
-
-1. In your Railway service, go to the **Settings** tab
-2. Scroll to **Volumes** → click **"+ New Volume"**
-3. Set the mount path to `/data`
-4. Go to the **Variables** tab → add a new variable:
-   - Name: `DATA_DIR`
-   - Value: `/data`
-5. Redeploy
-
-The code already supports this (`DATA_DIR` env var) — once set, `data.json`
-lives on the persistent volume instead of the container's throwaway disk,
-so it survives every future code update.
-
-**If you skip this:** the app still works fine, but treat confessions as
-temporary — they'll vanish the next time you push a change.
+- **On Render/Railway free tiers, the filesystem can reset on redeploy
+  or restart.** This means confessions could disappear if the service
+  restarts. For a fun project among classmates this is usually an
+  acceptable tradeoff — but know that it's not permanent storage.
+- If you want it to persist properly long-term, the next step up would
+  be a small real database (like SQLite with a persistent disk, or a
+  free-tier Postgres instance) — worth doing once people are actually
+  using it regularly.
 
 ## Deploying
 

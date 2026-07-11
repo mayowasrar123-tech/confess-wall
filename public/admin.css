@@ -22,9 +22,6 @@ body {
   align-items: center;
   justify-content: center;
 }
-.login-screen[hidden] {
-  display: none;
-}
 .login-box {
   background: var(--surface);
   border: 1px solid var(--border);

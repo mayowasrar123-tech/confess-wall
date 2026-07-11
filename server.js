@@ -5,10 +5,7 @@ const crypto = require("crypto");
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, "public");
-// DATA_DIR lets you point storage at a persistent Railway Volume (e.g. "/data").
-// Without it, data.json lives next to the code and gets wiped on redeploy.
-const DATA_DIR = process.env.DATA_DIR || __dirname;
-const DATA_FILE = path.join(DATA_DIR, "data.json");
+const DATA_FILE = path.join(__dirname, "data.json");
 
 // Set this in Railway's Variables tab (Settings > Variables) to something only
 // you know. Without setting it, it defaults to "changeme" — change it before
@@ -19,31 +16,6 @@ const MAX_CONFESSION_LENGTH = 500;
 const MAX_COMMENT_LENGTH = 200;
 const POST_COOLDOWN_MS = 20 * 1000; // 1 post per 20s per IP
 const COMMENT_COOLDOWN_MS = 5 * 1000;
-
-// ---- Security headers, applied to every response ----
-// CSP allows Google Fonts (which the site actually uses) and otherwise
-// keeps everything restricted to same-origin.
-const SECURITY_HEADERS = {
-  "Content-Security-Policy":
-    "default-src 'self'; " +
-    "style-src 'self' https://fonts.googleapis.com; " +
-    "font-src https://fonts.gstatic.com; " +
-    "script-src 'self'; " +
-    "connect-src 'self'; " +
-    "img-src 'self'; " +
-    "frame-ancestors 'none'",
-  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-  "X-Frame-Options": "DENY",
-  "X-Content-Type-Options": "nosniff",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
-};
-
-function applySecurityHeaders(res) {
-  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
-    res.setHeader(key, value);
-  }
-}
 
 // ---- Simple JSON-file "database" with a write queue to avoid corruption ----
 let writeQueue = Promise.resolve();
@@ -306,7 +278,6 @@ function serveStatic(req, res) {
 }
 
 const server = http.createServer(async (req, res) => {
-  applySecurityHeaders(res);
   const url = req.url.split("?")[0];
 
   if (req.method === "GET" && url === "/api/confessions") {
@@ -343,7 +314,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
   console.log(`Confession Wall running on http://localhost:${PORT}`);
-  console.log(`Storing data in: ${DATA_FILE}`);
 });
