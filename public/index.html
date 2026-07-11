@@ -4,31 +4,38 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>The Wall — say it anonymously</title>
+<meta name="description" content="Post anonymous confessions, no names, no login." />
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css" />
+<link rel="stylesheet" href="tailwind.css" />
 </head>
-<body>
+<body class="wall-body">
 
-<header class="board-header">
-  <div class="wrap">
-    <h1 class="pinned-title" id="board-title">The Wall</h1>
-    <p class="subtitle" id="board-subtitle">Say what you can't say anywhere else. No names. No login.</p>
+<a href="#confession-input" class="sr-only-focusable">Skip to composer</a>
+
+<header class="wall-header">
+  <div class="wall-wrap">
+    <h1 class="wall-title" id="board-title">The Wall</h1>
+    <p class="wall-subtitle" id="board-subtitle">Say what you can't say anywhere else. No names. No login.</p>
+    <p class="stats-strip" id="stats-strip" hidden></p>
   </div>
 </header>
 
-<main class="wrap">
-  <section class="composer" aria-label="Post a confession">
-    <div class="note note-compose">
-      <span class="pin" aria-hidden="true"></span>
+<main class="wall-wrap">
+  <section class="composer-wrap" aria-label="Post a confession">
+    <div class="note">
+      <span class="pin-dot" aria-hidden="true"></span>
       <textarea
         id="confession-input"
+        class="composer-textarea"
         placeholder="What's on your mind..."
         maxlength="500"
         aria-label="Your confession"
+        aria-describedby="char-count"
       ></textarea>
       <div class="composer-row">
-        <select id="category-select" aria-label="Category">
+        <select id="category-select" class="category-select" aria-label="Category">
           <option value="random">🎲 Random</option>
           <option value="funny">😂 Funny</option>
           <option value="serious">💭 Serious</option>
@@ -36,30 +43,71 @@
           <option value="rant">🔥 Rant</option>
         </select>
         <span class="char-count" id="char-count">500 left</span>
-        <button id="post-btn">Pin it</button>
+        <button id="post-btn" class="btn-primary" type="button">
+          <span class="btn-label">Pin it</span>
+        </button>
       </div>
     </div>
   </section>
 
-  <div class="feed-controls">
-    <button class="sort-btn active" data-sort="new">Newest</button>
-    <button class="sort-btn" data-sort="top">Most liked</button>
+  <div class="toolbar">
+    <div class="search-wrap">
+      <span class="search-icon" aria-hidden="true">🔍</span>
+      <input
+        type="search"
+        id="search-input"
+        class="search-input"
+        placeholder="Search confessions..."
+        aria-label="Search confessions"
+      />
+    </div>
+
+    <div class="filter-chips" role="group" aria-label="Filter by category">
+      <button class="chip is-active" data-category="all" aria-pressed="true">All</button>
+      <button class="chip" data-category="funny" aria-pressed="false">😂 Funny</button>
+      <button class="chip" data-category="serious" aria-pressed="false">💭 Serious</button>
+      <button class="chip" data-category="advice" aria-pressed="false">🆘 Advice</button>
+      <button class="chip" data-category="rant" aria-pressed="false">🔥 Rant</button>
+      <button class="chip" data-category="random" aria-pressed="false">🎲 Random</button>
+    </div>
+
+    <div class="feed-controls" role="tablist" aria-label="Sort confessions">
+      <button class="sort-btn is-active" data-sort="new" role="tab" aria-selected="true">Newest</button>
+      <button class="sort-btn" data-sort="top" role="tab" aria-selected="false">Most reactions</button>
+    </div>
   </div>
 
-  <p class="error-msg" id="error-msg" hidden></p>
+  <div role="status" aria-live="polite" class="sr-only" id="sr-status"></div>
 
-  <section class="board" id="board" aria-live="polite">
-    <p class="empty-state" id="empty-state" hidden>The wall is empty. Be the first to pin something.</p>
+  <section class="board" id="board" aria-live="polite" aria-busy="true">
+    <div class="note skeleton-card" aria-hidden="true">
+      <div class="skeleton-line h-4 w-3/4 mb-2"></div>
+      <div class="skeleton-line h-4 w-1/2 mb-2"></div>
+      <div class="skeleton-line h-4 w-2/3"></div>
+    </div>
+    <div class="note skeleton-card" aria-hidden="true">
+      <div class="skeleton-line h-4 w-2/3 mb-2"></div>
+      <div class="skeleton-line h-4 w-3/4 mb-2"></div>
+      <div class="skeleton-line h-4 w-1/2"></div>
+    </div>
+    <div class="note skeleton-card" aria-hidden="true">
+      <div class="skeleton-line h-4 w-1/2 mb-2"></div>
+      <div class="skeleton-line h-4 w-3/4 mb-2"></div>
+      <div class="skeleton-line h-4 w-2/3"></div>
+    </div>
   </section>
+  <p class="empty-state" id="empty-state" hidden>The wall is empty. Be the first to pin something.</p>
 </main>
 
-<footer class="board-footer">
-  <div class="wrap">
+<footer class="wall-footer">
+  <div class="wall-wrap">
     <p>Posts are fully anonymous — no accounts, no tracking of who wrote what. Be kind. Don't post anything that could identify or harm someone else.</p>
   </div>
 </footer>
 
+<div class="toast-region" id="toast-region" aria-live="assertive"></div>
+
 <script src="config.js"></script>
-<script src="script.js"></script>
+<script type="module" src="js/wall.js"></script>
 </body>
 </html>

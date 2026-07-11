@@ -5,7 +5,10 @@ const crypto = require("crypto");
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, "public");
-const DATA_FILE = path.join(__dirname, "data.json");
+// DATA_DIR lets you point storage at a persistent Railway Volume (e.g. "/data").
+// Without it, data.json lives next to the code and gets wiped on redeploy.
+const DATA_DIR = process.env.DATA_DIR || __dirname;
+const DATA_FILE = path.join(DATA_DIR, "data.json");
 
 // Set this in Railway's Variables tab (Settings > Variables) to something only
 // you know. Without setting it, it defaults to "changeme" — change it before
@@ -17,13 +20,46 @@ const MAX_COMMENT_LENGTH = 200;
 const POST_COOLDOWN_MS = 20 * 1000; // 1 post per 20s per IP
 const COMMENT_COOLDOWN_MS = 5 * 1000;
 
+// ---- Security headers, applied to every response ----
+// CSP allows Google Fonts (which the site actually uses) and otherwise
+// keeps everything restricted to same-origin.
+const SECURITY_HEADERS = {
+  "Content-Security-Policy":
+    "default-src 'self'; " +
+    "style-src 'self' https://fonts.googleapis.com; " +
+    "font-src https://fonts.gstatic.com; " +
+    "script-src 'self'; " +
+    "connect-src 'self'; " +
+    "img-src 'self'; " +
+    "frame-ancestors 'none'",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "X-Frame-Options": "DENY",
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+};
+
+function applySecurityHeaders(res) {
+  for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    res.setHeader(key, value);
+  }
+}
+
 // ---- Simple JSON-file "database" with a write queue to avoid corruption ----
 let writeQueue = Promise.resolve();
 
 function loadData() {
   try {
     const raw = fs.readFileSync(DATA_FILE, "utf8");
-    return JSON.parse(raw);
+    const data = JSON.parse(raw);
+    // Migrate confessions created before the reactions system existed:
+    // they only have a numeric `likes` field, not a `reactions` object.
+    for (const c of data.confessions || []) {
+      if (!c.reactions) {
+        c.reactions = { ...EMPTY_REACTIONS, heart: typeof c.likes === "number" ? c.likes : 0 };
+      }
+    }
+    return data;
   } catch {
     return { confessions: [] };
   }
@@ -78,6 +114,8 @@ function sanitize(text) {
 }
 
 const VALID_CATEGORIES = ["funny", "serious", "advice", "rant", "random"];
+const VALID_REACTIONS = ["heart", "laugh", "shock", "sad"];
+const EMPTY_REACTIONS = { heart: 0, laugh: 0, shock: 0, sad: 0 };
 
 function jsonResponse(res, status, body) {
   res.writeHead(status, { "Content-Type": "application/json" });
@@ -148,7 +186,7 @@ async function handlePostConfession(req, res) {
     text,
     category,
     createdAt: Date.now(),
-    likes: 0,
+    reactions: { ...EMPTY_REACTIONS },
     comments: [],
   };
   data.confessions.push(confession);
@@ -157,14 +195,37 @@ async function handlePostConfession(req, res) {
   jsonResponse(res, 201, { confession });
 }
 
-async function handleLike(req, res, id) {
+async function handleReact(req, res, id) {
+  let body;
+  try {
+    body = await readBody(req);
+  } catch {
+    return jsonResponse(res, 400, { error: "Invalid request body." });
+  }
+
+  const type = body.type === null ? null : body.type;
+  const previousType = body.previousType === null ? null : body.previousType;
+
+  if (type !== null && !VALID_REACTIONS.includes(type)) {
+    return jsonResponse(res, 400, { error: "Invalid reaction type." });
+  }
+  if (previousType !== null && !VALID_REACTIONS.includes(previousType)) {
+    return jsonResponse(res, 400, { error: "Invalid previous reaction type." });
+  }
+
   const data = loadData();
   const confession = data.confessions.find((c) => c.id === id);
   if (!confession) return jsonResponse(res, 404, { error: "Confession not found." });
 
-  confession.likes += 1;
+  if (previousType && previousType !== type && confession.reactions[previousType] > 0) {
+    confession.reactions[previousType] -= 1;
+  }
+  if (type && type !== previousType) {
+    confession.reactions[type] += 1;
+  }
+
   await saveData(data);
-  jsonResponse(res, 200, { likes: confession.likes });
+  jsonResponse(res, 200, { reactions: confession.reactions });
 }
 
 async function handleComment(req, res, id) {
@@ -257,6 +318,7 @@ const MIME = {
   ".css": "text/css",
   ".js": "application/javascript",
   ".json": "application/json",
+  ".svg": "image/svg+xml",
 };
 
 function serveStatic(req, res) {
@@ -272,12 +334,17 @@ function serveStatic(req, res) {
       return res.end("Not found");
     }
     const ext = path.extname(filePath);
-    res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
+    const headers = { "Content-Type": MIME[ext] || "application/octet-stream" };
+    // HTML always revalidates so a redeploy is picked up immediately; CSS/JS/config
+    // are safe to cache briefly since they're versioned by redeploy, not by filename.
+    headers["Cache-Control"] = ext === ".html" ? "no-cache" : "public, max-age=3600";
+    res.writeHead(200, headers);
     res.end(content);
   });
 }
 
 const server = http.createServer(async (req, res) => {
+  applySecurityHeaders(res);
   const url = req.url.split("?")[0];
 
   if (req.method === "GET" && url === "/api/confessions") {
@@ -286,15 +353,15 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && url === "/api/confessions") {
     return handlePostConfession(req, res);
   }
-  const likeMatch = url.match(/^\/api\/confessions\/([a-f0-9-]+)\/like$/);
-  if (req.method === "POST" && likeMatch) {
-    return handleLike(req, res, likeMatch[1]);
+  const reactMatch = url.match(/^\/api\/confessions\/([a-f0-9-]+)\/react$/);
+  if (req.method === "POST" && reactMatch) {
+    return handleReact(req, res, reactMatch[1]);
   }
   const commentMatch = url.match(/^\/api\/confessions\/([a-f0-9-]+)\/comments$/);
   if (req.method === "POST" && commentMatch) {
     return handleComment(req, res, commentMatch[1]);
   }
-  if (req.method === "DELETE" && likeMatch === null) {
+  if (req.method === "DELETE" && reactMatch === null) {
     const deleteConfessionMatch = url.match(/^\/api\/confessions\/([a-f0-9-]+)$/);
     if (deleteConfessionMatch) {
       return handleDeleteConfession(req, res, deleteConfessionMatch[1]);
@@ -314,5 +381,7 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, () => {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
   console.log(`Confession Wall running on http://localhost:${PORT}`);
+  console.log(`Storing data in: ${DATA_FILE}`);
 });

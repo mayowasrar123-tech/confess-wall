@@ -1,13 +1,20 @@
 {
   "name": "confess-wall",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "The Wall - anonymous confession board",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "build": "npm run build:css",
+    "build:css": "tailwindcss -i ./src/input.css -o ./public/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./src/input.css -o ./public/tailwind.css --watch",
+    "postinstall": "npm run build:css",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "tailwindcss": "^3.4.13"
+  }
 }
